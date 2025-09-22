@@ -11,11 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const mobileInput = document.getElementById('mobile-input');
 
     let currentRowIndex = 0;
-    let currentColIndex = 0;
     let guesses = []; // To store submitted guesses for persistence
     let isGameWon = false;
 
-    // Function to create the initial grid
     function createGrid() {
         board.innerHTML = '';
         for (let i = 0; i < INITIAL_GUESSES; i++) {
@@ -38,20 +36,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function submitGuess() {
-        if (currentColIndex < WORD_LENGTH) return; // Don't submit incomplete words
+        const currentGuess = mobileInput.value.toUpperCase();
+        if (currentGuess.length < WORD_LENGTH) return;
 
-        let guess = '';
-        for (let j = 0; j < WORD_LENGTH; j++) {
-            const tile = document.getElementById(`tile-${currentRowIndex}-${j}`);
-            guess += tile.textContent;
-        }
-
-        guess = guess.toUpperCase();
         const guessResult = [];
         const correctLetters = WORD_TO_GUESS.split('');
 
-        // Color the tiles based on the guess
-        guess.split('').forEach((letter, index) => {
+        currentGuess.split('').forEach((letter, index) => {
             const tile = document.getElementById(`tile-${currentRowIndex}-${index}`);
             let state = 'incorrect';
             if (letter === correctLetters[index]) {
@@ -66,16 +57,15 @@ document.addEventListener('DOMContentLoaded', () => {
         guesses.push(guessResult);
         saveGame();
 
-        if (guess === WORD_TO_GUESS) {
+        if (currentGuess === WORD_TO_GUESS) {
             isGameWon = true;
             setTimeout(() => alert('You win!'), 100);
-            mobileInput.blur(); // Hide keyboard
+            mobileInput.blur();
             return;
         }
 
         currentRowIndex++;
-        currentColIndex = 0;
-        mobileInput.value = ''; // Clear input for next guess
+        mobileInput.value = '';
 
         const lastTileId = `tile-${currentRowIndex}-0`;
         if (!document.getElementById(lastTileId)) {
@@ -83,46 +73,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function handleKeyPress(key) {
+    function handleKeyDown(event) {
         if (isGameWon) return;
-
-        if (key === 'Enter') {
+        if (event.key === 'Enter') {
             submitGuess();
-        } else if (key === 'Backspace') {
-            if (currentColIndex > 0) {
-                currentColIndex--;
-                const tile = document.getElementById(`tile-${currentRowIndex}-${currentColIndex}`);
-                tile.textContent = '';
-                mobileInput.value = mobileInput.value.slice(0, -1);
-            }
-        } else if (/^[a-zA-Z]$/.test(key)) {
-            if (currentColIndex < WORD_LENGTH) {
-                const tile = document.getElementById(`tile-${currentRowIndex}-${currentColIndex}`);
-                tile.textContent = key.toUpperCase();
-                mobileInput.value += key.toUpperCase();
-                currentColIndex++;
-            }
         }
     }
 
-    function handleMobileInput(event) {
+    function handleInput(event) {
         if (isGameWon) return;
+        if (event.target.value.length > WORD_LENGTH) {
+            event.target.value = event.target.value.slice(0, WORD_LENGTH);
+        }
+
         const text = event.target.value.toUpperCase();
 
-        // Clear the current row first
         for (let j = 0; j < WORD_LENGTH; j++) {
             const tile = document.getElementById(`tile-${currentRowIndex}-${j}`);
-            if(tile) tile.textContent = '';
+            if (tile) tile.textContent = text[j] || '';
         }
-        // Repopulate with the new text
-        for (let j = 0; j < text.length; j++) {
-            const tile = document.getElementById(`tile-${currentRowIndex}-${j}`);
-            if(tile) tile.textContent = text[j];
-        }
-        currentColIndex = text.length;
     }
 
-    // --- Persistence ---
     function saveGame() {
         localStorage.setItem('wordle-guesses', JSON.stringify(guesses));
     }
@@ -134,7 +105,6 @@ document.addEventListener('DOMContentLoaded', () => {
             let lastGuessCorrect = false;
             guesses.forEach((guess, rowIndex) => {
                 let currentGuessStr = '';
-                // Ensure enough rows exist
                  while(rowIndex >= document.querySelectorAll('#game-board .tile').length / WORD_LENGTH) {
                     addNewRow();
                 }
@@ -162,16 +132,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- Event Listeners ---
     clearButton.addEventListener('click', (e) => {
-        e.stopPropagation(); // prevent container click event
+        e.stopPropagation();
         if (isGameWon) return;
-        for (let j = 0; j < WORD_LENGTH; j++) {
-            const tile = document.getElementById(`tile-${currentRowIndex}-${j}`);
-            if (tile) tile.textContent = '';
-        }
-        currentColIndex = 0;
         mobileInput.value = '';
+        mobileInput.dispatchEvent(new Event('input', { bubbles: true }));
     });
 
     container.addEventListener('click', () => {
@@ -180,10 +145,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    document.addEventListener('keydown', (e) => handleKeyPress(e.key));
-    mobileInput.addEventListener('input', handleMobileInput);
+    mobileInput.addEventListener('keydown', handleKeyDown);
+    mobileInput.addEventListener('input', handleInput);
 
-    // Initialize the game
     createGrid();
     loadGame();
 });
