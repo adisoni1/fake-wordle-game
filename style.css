@@ -10,6 +10,7 @@ body {
     align-items: center;
     justify-content: center;
     min-height: 100vh;
+    cursor: pointer;
 }
 
 .clue {
@@ -40,7 +41,6 @@ body {
     color: #000;
 }
 
-/* Styles for feedback */
 .tile.correct {
     background-color: #6aaa64;
     color: white;
@@ -70,4 +70,15 @@ body {
 
 #clear-button:hover {
     background-color: #ddd;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
 }
